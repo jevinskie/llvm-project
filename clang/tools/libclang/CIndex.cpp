@@ -5139,6 +5139,14 @@ CXString clang_getCursorSpelling(CXCursor C) {
     llvm_unreachable("unknown visibility type");
   }
 
+  if (C.kind == CXCursor_ObjCBridgeAttr) {
+    const ObjCBridgeAttr *BA = cast<ObjCBridgeAttr>(cxcursor::getCursorAttr(C));
+    const IdentifierInfo *BT = BA->getBridgedType();
+    if (BT) {
+      return cxstring::createDup(BT->getName());
+    }
+  }
+
   return cxstring::createEmpty();
 }
 
