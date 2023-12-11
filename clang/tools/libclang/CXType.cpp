@@ -293,6 +293,21 @@ CXType clang_getCursorType(CXCursor C) {
     return MakeCXType(QualType(), TU);
   }
 
+  if (clang_isAttribute(C.kind)) {
+    switch (C.kind) {
+    case CXCursor_ObjCBridgeAttr:
+    case CXCursor_ObjCBridgeMutableAttr:
+    case CXCursor_ObjCBridgeRelatedAttr: {
+      QualType T = Context.getTypeDeclType(cast<const TypeDecl>(getCursorDecl(C)));
+      return MakeCXType(T, TU);
+    }
+    default:
+      break;
+    }
+
+    return MakeCXType(QualType(), TU);
+  }
+
   return MakeCXType(QualType(), TU);
 }
 
