@@ -34,7 +34,11 @@ public:
   std::vector<ObjFile *> compile();
 
 private:
+  std::vector<ObjFile *> compile(bool isAsm);
+
+private:
   std::unique_ptr<llvm::lto::LTO> ltoObj;
+  std::unique_ptr<llvm::lto::LTO> ltoAsm;
   std::vector<llvm::SmallString<0>> buf;
   std::vector<std::unique_ptr<llvm::MemoryBuffer>> files;
   std::unique_ptr<llvm::raw_fd_ostream> indexFile;

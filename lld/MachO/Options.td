@@ -632,6 +632,9 @@ def dependency_info : Separate<["-"], "dependency_info">,
 def save_temps : Flag<["-"], "save-temps">,
     HelpText<"Save intermediate LTO compilation results">,
     Group<grp_introspect>;
+def save_temps_asm : Flag<["-"], "save-temps-asm">,
+    HelpText<"Save final LTO compilation result assembly">,
+    Group<grp_introspect>;
 
 def grp_symtab : OptionGroup<"symtab">, HelpText<"SYMBOL TABLE">;
 

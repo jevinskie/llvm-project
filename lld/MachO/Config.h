@@ -129,6 +129,7 @@ struct Configuration {
   bool printWhyLoad = false;
   bool searchDylibsFirst = false;
   bool saveTemps = false;
+  bool saveTempsAsm = false;
   bool adhocCodesign = false;
   bool emitFunctionStarts = false;
   bool emitDataInCodeInfo = false;

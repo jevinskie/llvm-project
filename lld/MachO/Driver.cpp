@@ -585,6 +585,8 @@ static bool compileBitcodeFiles() {
   for (ObjFile *file : compiled)
     if (file->kind() == InputFile::ObjKind)
       inputFiles.insert(file);
+    else
+      llvm::errs() << "non Obj: " << file->getName() << "\n";
 
   return !compiled.empty();
 }
@@ -1855,6 +1857,7 @@ bool link(ArrayRef<const char *> argsArr, llvm::raw_ostream &stdoutOS,
     warn("-why_live has no effect without -dead_strip, ignoring");
 
   config->saveTemps = args.hasArg(OPT_save_temps);
+  config->saveTempsAsm = args.hasArg(OPT_save_temps_asm);
 
   config->adhocCodesign = args.hasFlag(
       OPT_adhoc_codesign, OPT_no_adhoc_codesign,
