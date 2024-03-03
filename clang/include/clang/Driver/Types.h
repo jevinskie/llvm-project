@@ -36,6 +36,9 @@ namespace types {
   /// preprocessed.
   ID getPreprocessedType(ID Id);
 
+  /// isPreprocessedType - True if the ID is a preprocessed type.
+  bool isPreprocessedType(ID Id);
+
   /// getPrecompiledType - Get the ID of the type for this input when
   /// it has been precompiled, or INVALID if this input is not
   /// precompiled.

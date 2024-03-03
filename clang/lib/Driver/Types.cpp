@@ -61,6 +61,17 @@ types::ID types::getPreprocessedType(ID Id) {
   return PPT;
 }
 
+bool types::isPreprocessedType(ID Id) {
+  return Id == TY_PP_Asm || Id == TY_PP_C || Id == TY_PP_CHeader ||
+         Id == TY_PP_CL || Id == TY_PP_CLCXX || Id == TY_PP_CUDA ||
+         Id == TY_PP_CXX || Id == TY_PP_CXXHeader ||
+         Id == TY_PP_CXXHeaderUnit || Id == TY_PP_CXXModule ||
+         Id == TY_PP_Fortran || Id == TY_PP_HIP || Id == TY_PP_ObjC ||
+         Id == TY_PP_ObjCHeader || Id == TY_PP_ObjCXX ||
+         Id == TY_PP_ObjCXXHeader || Id == TY_PP_ObjCXX_Alias ||
+         Id == TY_PP_ObjC_Alias;
+}
+
 static bool isPreprocessedModuleType(ID Id) {
   return Id == TY_CXXModule || Id == TY_PP_CXXModule;
 }

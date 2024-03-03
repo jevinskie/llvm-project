@@ -548,8 +548,11 @@ static bool shouldEnableVectorizerAtOLevel(const ArgList &Args, bool isSlpVec) {
 }
 
 /// Add -x lang to \p CmdArgs for \p Input.
+/// If Input is a preprocessed type and isGnuStd is true,
+/// also append -Wno-gnu-line-marker otherwise -Wgnu or -Wpendatic
+/// will complain.
 static void addDashXForInput(const ArgList &Args, const InputInfo &Input,
-                             ArgStringList &CmdArgs) {
+                             ArgStringList &CmdArgs, bool isGnuStd) {
   // When using -verify-pch, we don't want to provide the type
   // 'precompiled-header' if it was inferred from the file extension
   if (Args.hasArg(options::OPT_verify_pch) && Input.getType() == types::TY_PCH)
@@ -575,6 +578,10 @@ static void addDashXForInput(const ArgList &Args, const InputInfo &Input,
       break;
     }
     CmdArgs.push_back(ClangType);
+
+    if (isGnuStd && types::isPreprocessedType(Input.getType())) {
+      CmdArgs.push_back("-Wno-gnu-line-marker");
+    }
   }
 }
 
@@ -5158,8 +5165,13 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
       assert(Output.isNothing() && "Input output.");
     }
 
+    // Get -std to see if it is GNU-style, if so addDashXForInput will add
+    // -Wno-gnu-line-marker to suppress warnings if -Wgnu or -Wpedantic is used
+    // with preprocessor input modes
+    const Arg *Std = Args.getLastArg(options::OPT_std_EQ);
+    const auto isGnuStd = Std ? llvm::StringRef(Std->getValue()).contains("gnu") : false;
     for (const auto &II : Inputs) {
-      addDashXForInput(Args, II, CmdArgs);
+      addDashXForInput(Args, II, CmdArgs, isGnuStd);
       if (II.isFilename())
         CmdArgs.push_back(II.getFilename());
       else
@@ -7732,7 +7744,11 @@ void Clang::ConstructJob(Compilation &C, const JobAction &JA,
     assert(Output.isNothing() && "Invalid output.");
   }
 
-  addDashXForInput(Args, Input, CmdArgs);
+  // Get -std to see if it is GNU-style, if so addDashXForInput will add
+  // -Wno-gnu-line-marker to suppress warnings if -Wgnu or -Wpedantic is used
+  // with preprocessor input modes
+  const auto isGnuStd = Std ? llvm::StringRef(Std->getValue()).contains("gnu") : false;
+  addDashXForInput(Args, Input, CmdArgs, isGnuStd);
 
   ArrayRef<InputInfo> FrontendInputs = Input;
   if (IsExtractAPI)
