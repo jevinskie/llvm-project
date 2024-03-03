@@ -19,6 +19,7 @@ function(llvm_create_cross_target project_name target_name toolchain buildtype)
     set(CROSS_TOOLCHAIN_FLAGS_INIT
       -DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}
       -DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+      -DCMAKE_CXX_STANDARD=${CMAKE_CXX_STANDARD}
       )
   endif()
   set(CROSS_TOOLCHAIN_FLAGS_${target_name} ${CROSS_TOOLCHAIN_FLAGS_INIT}
