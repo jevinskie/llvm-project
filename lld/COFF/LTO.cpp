@@ -82,6 +82,7 @@ lto::Config BitcodeCompiler::createConfig() {
   assert(optLevelOrNone && "Invalid optimization level!");
   c.CGOptLevel = *optLevelOrNone;
   c.AlwaysEmitRegularLTOObj = !ctx.config.ltoObjPath.empty();
+  c.AlwaysEmitRegularLTOAsm = !ctx.config.ltoAsmPath.empty();
   c.DebugPassManager = ctx.config.ltoDebugPassManager;
   c.CSIRProfile = std::string(ctx.config.ltoCSProfileFile);
   c.RunCSIRInstr = ctx.config.ltoCSProfileGenerate;

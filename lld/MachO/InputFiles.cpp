@@ -965,8 +965,8 @@ void ObjFile::parseLinkerOptions(SmallVectorImpl<StringRef> &LCLinkerOptions) {
 SmallVector<StringRef> macho::unprocessedLCLinkerOptions;
 ObjFile::ObjFile(MemoryBufferRef mb, uint32_t modTime, StringRef archiveName,
                  bool lazy, bool forceHidden, bool compatArch,
-                 bool builtFromBitcode)
-    : InputFile(ObjKind, mb, lazy), modTime(modTime), forceHidden(forceHidden),
+                 bool builtFromBitcode, bool isAsm)
+    : InputFile(isAsm ? AsmKind : ObjKind, mb, lazy), modTime(modTime), forceHidden(forceHidden),
       builtFromBitcode(builtFromBitcode) {
   this->archiveName = std::string(archiveName);
   this->compatArch = compatArch;

@@ -974,6 +974,10 @@ def object_path_lto : Separate<["-"], "object_path_lto">,
     MetaVarName<"<path>">,
     HelpText<"Retain any temporary mach-o file in <path> that would otherwise be deleted during LTO">,
     Group<grp_rare>;
+def assembly_path_lto : Separate<["-"], "assembly_path_lto">,
+    MetaVarName<"<path>">,
+    HelpText<"Retain any temporary assembly file in <path> that would otherwise be deleted during LTO">,
+    Group<grp_rare>;
 def cache_path_lto : Separate<["-"], "cache_path_lto">,
     MetaVarName<"<path>">,
     HelpText<"Use <path> as a directory for the incremental LTO cache">,

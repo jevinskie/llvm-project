@@ -88,6 +88,11 @@ struct Config {
   /// want to know a priori all possible output files.
   bool AlwaysEmitRegularLTOObj = false;
 
+  /// Always emit a Regular LTO assembly even when it is empty because no Regular
+  /// LTO modules were linked. This option is useful for some build system which
+  /// want to know a priori all possible output files.
+  bool AlwaysEmitRegularLTOAsm = false;
+
   /// Allows non-imported definitions to get the potentially more constraining
   /// visibility from the prevailing definition. FromPrevailing is the default
   /// because it works for many binary formats. ELF can use the more optimized

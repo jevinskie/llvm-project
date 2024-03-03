@@ -266,6 +266,9 @@ def thinlto_prefix_replace: P<
 def lto_obj_path : P<
     "lto-obj-path",
     "output native object for merged LTO unit to this path">;
+def lto_asm_path : P<
+    "lto-asm-path",
+    "output assembly for merged LTO unit to this path">;
 def lto_cs_profile_generate: F<"lto-cs-profile-generate">,
     HelpText<"Perform context sensitive PGO instrumentation">;
 def lto_cs_profile_file : P<"lto-cs-profile-file",
@@ -303,7 +306,7 @@ def time_trace_granularity_eq: Joined<["--"], "time-trace-granularity=">,
     HelpText<"Minimum time granularity (in microseconds) traced by time profiler">;
 
 defm build_id: B<
-     "build-id", 
+     "build-id",
      "Generate build ID (always on when generating PDB)",
      "Do not Generate build ID">;
 

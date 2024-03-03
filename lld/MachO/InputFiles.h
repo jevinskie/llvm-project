@@ -110,6 +110,7 @@ public:
     DylibKind,
     ArchiveKind,
     BitcodeKind,
+    AsmKind
   };
 
   virtual ~InputFile() = default;
@@ -157,11 +158,11 @@ struct FDE {
 };
 
 // .o file
-class ObjFile final : public InputFile {
+class ObjFile : public InputFile {
 public:
   ObjFile(MemoryBufferRef mb, uint32_t modTime, StringRef archiveName,
           bool lazy = false, bool forceHidden = false, bool compatArch = true,
-          bool builtFromBitcode = false);
+          bool builtFromBitcode = false, bool isAsm = false);
   ArrayRef<llvm::MachO::data_in_code_entry> getDataInCode() const;
   ArrayRef<uint8_t> getOptimizationHints() const;
   template <class LP> void parse();
@@ -203,6 +204,16 @@ private:
   void splitEhFrames(ArrayRef<uint8_t> dataArr, Section &ehFrameSection);
   void registerCompactUnwind(Section &compactUnwindSection);
   void registerEhFrames(Section &ehFrameSection);
+};
+
+// .asm file
+class AsmFile final : public ObjFile {
+public:
+  AsmFile(MemoryBufferRef mb, uint32_t modTime, StringRef archiveName,
+          bool lazy = false, bool forceHidden = false, bool compatArch = true,
+          bool builtFromBitcode = false) : ObjFile(mb, modTime, archiveName, lazy, forceHidden, compatArch, builtFromBitcode, true) {};
+
+  static bool classof(const InputFile *f) { return f->kind() == AsmKind; }
 };
 
 // command-line -sectcreate file

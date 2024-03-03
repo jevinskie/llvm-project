@@ -1297,6 +1297,7 @@ static void readConfigs(opt::InputArgList &args) {
   else
     error("invalid codegen optimization level for LTO: " + Twine(ltoCgo));
   config->ltoObjPath = args.getLastArgValue(OPT_lto_obj_path_eq);
+  config->ltoAsmPath = args.getLastArgValue(OPT_lto_asm_path_eq);
   config->ltoPartitions = args::getInteger(args, OPT_lto_partitions, 1);
   config->ltoSampleProfile = args.getLastArgValue(OPT_lto_sample_profile);
   config->ltoBBAddrMap =

@@ -1341,6 +1341,13 @@ Error LTO::runRegularLTO(AddStreamFn AddStream) {
       return Err;
   }
 
+  if (!RegularLTO.EmptyCombinedModule || Conf.AlwaysEmitRegularLTOAsm) {
+    if (Error Err =
+            backend(Conf, AddStream, RegularLTO.ParallelCodeGenParallelismLevel,
+                    *RegularLTO.CombinedModule, ThinLTO.CombinedIndex))
+      return Err;
+  }
+
   return finalizeOptimizationRemarks(std::move(DiagnosticOutputFile));
 }
 

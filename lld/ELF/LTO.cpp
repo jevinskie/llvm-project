@@ -135,6 +135,7 @@ static lto::Config createConfig() {
       config->ltoValidateAllVtablesHaveTypeInfos;
   c.AllVtablesHaveTypeInfos = ctx.ltoAllVtablesHaveTypeInfos;
   c.AlwaysEmitRegularLTOObj = !config->ltoObjPath.empty();
+  c.AlwaysEmitRegularLTOAsm = !config->ltoAsmPath.empty();
 
   for (const llvm::StringRef &name : config->thinLTOModulesToCompile)
     c.ThinLTOModulesToCompile.emplace_back(name);

@@ -242,21 +242,33 @@ void darwin::Linker::AddLinkArgs(Compilation &C, const ArgList &Args,
 
   if (D.isUsingLTO() && (Version >= VersionTuple(116) || LinkerIsLLD) &&
       NeedsTempPath(Inputs)) {
-    std::string TmpPathName;
+    std::string TmpObjPathName;
+    std::string TmpAsmPathName;
     if (D.getLTOMode() == LTOK_Full) {
       // If we are using full LTO, then automatically create a temporary file
       // path for the linker to use, so that it's lifetime will extend past a
       // possible dsymutil step.
-      TmpPathName =
+      TmpObjPathName =
           D.GetTemporaryPath("cc", types::getTypeTempSuffix(types::TY_Object));
-    } else if (D.getLTOMode() == LTOK_Thin)
+      TmpAsmPathName =
+          D.GetTemporaryPath("cc", types::getTypeTempSuffix(types::TY_Asm));
+    } else if (D.getLTOMode() == LTOK_Thin) {
       // If we are using thin LTO, then create a directory instead.
-      TmpPathName = D.GetTemporaryDirectory("thinlto");
+      TmpObjPathName = D.GetTemporaryDirectory("thinlto");
+      TmpAsmPathName = TmpObjPathName;
+    }
 
-    if (!TmpPathName.empty()) {
-      auto *TmpPath = C.getArgs().MakeArgString(TmpPathName);
+    if (!TmpObjPathName.empty()) {
+      auto *TmpPath = C.getArgs().MakeArgString(TmpObjPathName);
       C.addTempFile(TmpPath);
       CmdArgs.push_back("-object_path_lto");
+      CmdArgs.push_back(TmpPath);
+    }
+
+    if (!TmpAsmPathName.empty()) {
+      auto *TmpPath = C.getArgs().MakeArgString(TmpAsmPathName);
+      C.addTempFile(TmpPath);
+      CmdArgs.push_back("-assembly_path_lto");
       CmdArgs.push_back(TmpPath);
     }
   }

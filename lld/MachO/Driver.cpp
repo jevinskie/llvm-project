@@ -583,7 +583,8 @@ static bool compileBitcodeFiles() {
 
   std::vector<ObjFile *> compiled = lto->compile();
   for (ObjFile *file : compiled)
-    inputFiles.insert(file);
+    if (file->kind() == InputFile::ObjKind)
+      inputFiles.insert(file);
 
   return !compiled.empty();
 }
@@ -1616,6 +1617,7 @@ bool link(ArrayRef<const char *> argsArr, llvm::raw_ostream &stdoutOS,
     config->umbrella = arg->getValue();
   }
   config->ltoObjPath = args.getLastArgValue(OPT_object_path_lto);
+  config->ltoAsmPath = args.getLastArgValue(OPT_assembly_path_lto);
   config->thinLTOCacheDir = args.getLastArgValue(OPT_cache_path_lto);
   config->thinLTOCachePolicy = getLTOCachePolicy(args);
   config->thinLTOEmitImportsFiles = args.hasArg(OPT_thinlto_emit_imports_files);

@@ -149,6 +149,7 @@ namespace options {
   static bool DisableVerify = false;
 #endif
   static std::string obj_path;
+  static std::string asm_path;
   static std::string extra_library_path;
   static std::string triple;
   static std::string mcpu;
@@ -877,6 +878,7 @@ static std::unique_ptr<LTO> createLTO(IndexWriteCallback OnIndexWrite,
   Conf.PTO.LoopVectorization = options::OptLevel > 1;
   Conf.PTO.SLPVectorization = options::OptLevel > 1;
   Conf.AlwaysEmitRegularLTOObj = !options::obj_path.empty();
+  Conf.AlwaysEmitRegularLTOAsm = !options::asm_path.empty();
 
   if (options::thinlto_index_only) {
     std::string OldPrefix, NewPrefix;

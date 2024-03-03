@@ -53,6 +53,7 @@ static lto::Config createConfig() {
   };
 
   c.AlwaysEmitRegularLTOObj = !config->ltoObjPath.empty();
+  c.AlwaysEmitRegularLTOAsm = !config->ltoAsmPath.empty();
 
   c.TimeTraceEnabled = config->timeTraceEnabled;
   c.TimeTraceGranularity = config->timeTraceGranularity;
@@ -252,19 +253,50 @@ std::vector<ObjFile *> BitcodeCompiler::compile() {
     return filePath;
   };
 
+  // In ThinLTO mode, Clang passes a temporary directory in -assembly_path_lto,
+  // while the argument is a single file in FullLTO mode.
+  bool asmPathIsDir = true;
+  if (!config->ltoAsmPath.empty()) {
+    if (std::error_code ec = fs::create_directories(config->ltoAsmPath))
+      fatal("cannot create LTO assembly path " + config->ltoAsmPath + ": " +
+            ec.message());
+
+    if (!fs::is_directory(config->ltoAsmPath)) {
+      asmPathIsDir = false;
+      unsigned asmCount =
+          count_if(buf, [](const SmallString<0> &b) { return !b.empty(); });
+      if (asmCount > 1)
+        fatal("-assembly_path_lto must specify a directory when using ThinLTO");
+    }
+  }
+
+  auto outputAsmFilePath = [asmPathIsDir](int i) {
+    SmallString<261> filePath("/tmp/lto.tmp");
+    if (!config->ltoAsmPath.empty()) {
+      filePath = config->ltoAsmPath;
+      if (asmPathIsDir)
+        path::append(filePath, Twine(i) + "." +
+                                   getArchitectureName(config->arch()) +
+                                   ".lto.asm");
+    }
+    return filePath;
+  };
+
   // ThinLTO with index only option is required to generate only the index
   // files. After that, we exit from linker and ThinLTO backend runs in a
   // distributed environment.
   if (config->thinLTOIndexOnly) {
     if (!config->ltoObjPath.empty())
       saveBuffer(buf[0], outputFilePath(0));
+    if (!config->ltoAsmPath.empty())
+      saveBuffer(buf[0], outputAsmFilePath(0));
     if (indexFile)
       indexFile->close();
     return {};
   }
 
-  if (!config->thinLTOCacheDir.empty())
-    pruneCache(config->thinLTOCacheDir, config->thinLTOCachePolicy, files);
+  // if (!config->thinLTOCacheDir.empty())
+  //   pruneCache(config->thinLTOCacheDir, config->thinLTOCachePolicy, files);
 
   std::vector<ObjFile *> ret;
   for (unsigned i = 0; i < maxTasks; ++i) {
@@ -295,6 +327,17 @@ std::vector<ObjFile *> BitcodeCompiler::compile() {
     }
     ret.push_back(make<ObjFile>(
         MemoryBufferRef(objBuf, saver().save(filePath.str())), modTime,
+        /*archiveName=*/"", /*lazy=*/false,
+        /*forceHidden=*/false, /*compatArch=*/true, /*builtFromBitcode=*/true));
+
+    auto asmFilePath = outputAsmFilePath(i);
+    uint32_t asmModTime = 0;
+    if (!config->ltoAsmPath.empty()) {
+      saveOrHardlinkBuffer(objBuf, asmFilePath, cachePath);
+      asmModTime = getModTime(asmFilePath);
+    }
+    ret.push_back(make<AsmFile>(
+        MemoryBufferRef(objBuf, saver().save(asmFilePath.str())), asmModTime,
         /*archiveName=*/"", /*lazy=*/false,
         /*forceHidden=*/false, /*compatArch=*/true, /*builtFromBitcode=*/true));
   }

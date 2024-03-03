@@ -254,6 +254,9 @@ struct Configuration {
   // Used for /lto-obj-path:
   llvm::StringRef ltoObjPath;
 
+  // Used for /lto-asm-path:
+  llvm::StringRef ltoAsmPath;
+
   // Used for /lto-cs-profile-generate:
   bool ltoCSProfileGenerate = false;
 

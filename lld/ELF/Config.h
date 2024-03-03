@@ -167,6 +167,7 @@ struct Config {
   llvm::StringRef ltoCSProfileFile;
   llvm::StringRef ltoNewPmPasses;
   llvm::StringRef ltoObjPath;
+  llvm::StringRef ltoAsmPath;
   llvm::StringRef ltoSampleProfile;
   llvm::StringRef mapFile;
   llvm::StringRef outputFile;
