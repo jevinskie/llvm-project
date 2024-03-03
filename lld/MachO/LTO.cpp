@@ -55,8 +55,6 @@ static lto::Config createConfig(bool isAsm) {
   c.AlwaysEmitRegularLTOObj = !config->ltoObjPath.empty();
   c.AlwaysEmitRegularLTOAsm = !config->ltoAsmPath.empty();
   if (isAsm) {
-    if (config->ltoAsmPath.empty())
-      report_fatal_error("LTO::MachO::createConfig called with isAsm = true but ltoAsmPath is empty.");
     c.CGFileType = CodeGenFileType::AssemblyFile;
   }
 
@@ -108,7 +106,7 @@ BitcodeCompiler::BitcodeCompiler() {
   }
 
   ltoObj = std::make_unique<lto::LTO>(createConfig(false), backend);
-  if (!config->ltoAsmPath.empty()) {
+  if (config->saveTempsAsm || !config->ltoAsmPath.empty()) {
     ltoAsm = std::make_unique<lto::LTO>(createConfig(true), backend);
   }
 }
@@ -264,34 +262,34 @@ std::vector<ObjFile *> BitcodeCompiler::compile(bool isAsm) {
     return filePath;
   };
 
-  // In ThinLTO mode, Clang passes a temporary directory in -assembly_path_lto,
-  // while the argument is a single file in FullLTO mode.
-  bool asmPathIsDir = true;
-  if (isAsm && !config->ltoAsmPath.empty()) {
-    if (std::error_code ec = fs::create_directories(config->ltoAsmPath))
-      fatal("cannot create LTO assembly path " + config->ltoAsmPath + ": " +
-            ec.message());
+  // // In ThinLTO mode, Clang passes a temporary directory in -assembly_path_lto,
+  // // while the argument is a single file in FullLTO mode.
+  // bool asmPathIsDir = true;
+  // if (isAsm && !config->ltoAsmPath.empty()) {
+  //   if (std::error_code ec = fs::create_directories(config->ltoAsmPath))
+  //     fatal("cannot create LTO assembly path " + config->ltoAsmPath + ": " +
+  //           ec.message());
 
-    if (!fs::is_directory(config->ltoAsmPath)) {
-      asmPathIsDir = false;
-      unsigned asmCount =
-          count_if(buf, [](const SmallString<0> &b) { return !b.empty(); });
-      if (asmCount > 1)
-        fatal("-assembly_path_lto must specify a directory when using ThinLTO");
-    }
-  }
+  //   if (!fs::is_directory(config->ltoAsmPath)) {
+  //     asmPathIsDir = false;
+  //     unsigned asmCount =
+  //         count_if(buf, [](const SmallString<0> &b) { return !b.empty(); });
+  //     if (asmCount > 1)
+  //       fatal("-assembly_path_lto must specify a directory when using ThinLTO");
+  //   }
+  // }
 
-  auto outputAsmFilePath = [asmPathIsDir](int i) {
-    SmallString<261> filePath("/tmp/lto.tmp");
-    if (!config->ltoAsmPath.empty()) {
-      filePath = config->ltoAsmPath;
-      if (asmPathIsDir)
-        path::append(filePath, Twine(i) + "." +
-                                   getArchitectureName(config->arch()) +
-                                   ".lto.asm");
-    }
-    return filePath;
-  };
+  // auto outputAsmFilePath = [asmPathIsDir](int i) {
+  //   SmallString<261> filePath("/tmp/lto.tmp");
+  //   if (!config->ltoAsmPath.empty()) {
+  //     filePath = config->ltoAsmPath;
+  //     if (asmPathIsDir)
+  //       path::append(filePath, Twine(i) + "." +
+  //                                  getArchitectureName(config->arch()) +
+  //                                  ".lto.asm");
+  //   }
+  //   return filePath;
+  // };
 
   // ThinLTO with index only option is required to generate only the index
   // files. After that, we exit from linker and ThinLTO backend runs in a
@@ -299,8 +297,8 @@ std::vector<ObjFile *> BitcodeCompiler::compile(bool isAsm) {
   if (config->thinLTOIndexOnly) {
     if (!isAsm && !config->ltoObjPath.empty())
       saveBuffer(buf[0], outputFilePath(0));
-    if (isAsm && !config->ltoAsmPath.empty())
-      saveBuffer(buf[0], outputAsmFilePath(0));
+    // if (isAsm && !config->ltoAsmPath.empty())
+    //   saveBuffer(buf[0], outputAsmFilePath(0));
     if (indexFile)
       indexFile->close();
     return {};
@@ -310,14 +308,6 @@ std::vector<ObjFile *> BitcodeCompiler::compile(bool isAsm) {
     pruneCache(config->thinLTOCacheDir, config->thinLTOCachePolicy, files);
 
   std::vector<ObjFile *> ret;
-  for (unsigned i = 0; i < maxTasks; ++i) {
-     llvm::errs() << "file[" << i << "]: ";
-    if (files[i]) {
-      llvm::errs() << files[i]->getBufferIdentifier() << "\n";
-    } else {
-      llvm::errs() << "nullptr\n";
-    }
-  }
   for (unsigned i = 0; i < maxTasks; ++i) {
     // Get the native object contents either from the cache or from memory.  Do
     // not use the cached MemoryBuffer directly to ensure dsymutil does not
@@ -333,34 +323,24 @@ std::vector<ObjFile *> BitcodeCompiler::compile(bool isAsm) {
     if (objBuf.empty())
       continue;
 
-    // FIXME: should `saveTemps` and `ltoObjPath` use the same file name?
-    if (config->saveTemps)
-      saveBuffer(objBuf,
-                 config->outputFile + ((i == 0) ? "" : Twine(i)) + (isAsm ? "lto.s" : ".lto.o"));
-
-    if (!isAsm) {
-      auto filePath = outputFilePath(i);
-      uint32_t modTime = 0;
-      if (!isAsm && !config->ltoObjPath.empty()) {
-        saveOrHardlinkBuffer(objBuf, filePath, cachePath);
-        modTime = getModTime(filePath);
-      }
-      ret.push_back(make<ObjFile>(
-          MemoryBufferRef(objBuf, saver().save(filePath.str())), modTime,
-          /*archiveName=*/"", /*lazy=*/false,
-          /*forceHidden=*/false, /*compatArch=*/true, /*builtFromBitcode=*/true));
-    } else {
-      auto asmFilePath = outputAsmFilePath(i);
-      uint32_t asmModTime = 0;
-      if (isAsm && !config->ltoAsmPath.empty()) {
-        saveOrHardlinkBuffer(objBuf, asmFilePath, cachePath);
-        asmModTime = getModTime(asmFilePath);
-      }
-      ret.push_back(make<AsmFile>(
-          MemoryBufferRef(objBuf, saver().save(asmFilePath.str())), asmModTime,
-          /*archiveName=*/"", /*lazy=*/false,
-          /*forceHidden=*/false, /*compatArch=*/true, /*builtFromBitcode=*/true));
+    if (isAsm || config->saveTemps || config->saveTempsAsm || !config->ltoAsmPath.empty()) {
+      saveBuffer(objBuf, isAsm ?
+        (!config->ltoAsmPath.empty() ? config->ltoAsmPath : config->outputFile + ((i == 0) ? "" : Twine(i)) + "lto.asm") :
+        (!config->ltoObjPath.empty() ? config->ltoObjPath : config->outputFile + ((i == 0) ? "" : Twine(i)) + "lto.o"));
+      if (isAsm)
+        return {};
     }
+
+    auto filePath = outputFilePath(i);
+    uint32_t modTime = 0;
+    if (!isAsm && !config->ltoObjPath.empty()) {
+      saveOrHardlinkBuffer(objBuf, filePath, cachePath);
+      modTime = getModTime(filePath);
+    }
+    ret.push_back(make<ObjFile>(
+        MemoryBufferRef(objBuf, saver().save(filePath.str())), modTime,
+        /*archiveName=*/"", /*lazy=*/false,
+        /*forceHidden=*/false, /*compatArch=*/true, /*builtFromBitcode=*/true));
   }
 
   return ret;
@@ -369,7 +349,7 @@ std::vector<ObjFile *> BitcodeCompiler::compile(bool isAsm) {
 // Merge all the bitcode files we have seen, codegen the result
 // and return the resulting ObjectFile(s).
 std::vector<ObjFile *> BitcodeCompiler::compile() {
-  if (!config->ltoAsmPath.empty()) {
+  if (config->saveTempsAsm || !config->ltoAsmPath.empty()) {
     compile(true);
   }
   return compile(false);
