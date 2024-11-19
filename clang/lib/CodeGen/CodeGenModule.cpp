@@ -594,26 +594,26 @@ static bool checkAliasedGlobal(
     }
   }
 
-  if (GV->isDeclaration()) {
-    Diags.Report(Location, diag::err_alias_to_undefined) << IsIFunc << IsIFunc;
-    Diags.Report(Location, diag::note_alias_requires_mangled_name)
-        << IsIFunc << IsIFunc;
-    // Provide a note if the given function is not found and exists as a
-    // mangled name.
-    for (const auto &[Decl, Name] : MangledDeclNames) {
-      if (const auto *ND = dyn_cast<NamedDecl>(Decl.getDecl())) {
-        if (ND->getName() == GV->getName()) {
-          Diags.Report(Location, diag::note_alias_mangled_name_alternative)
-              << Name
-              << FixItHint::CreateReplacement(
-                     AliasRange,
-                     (Twine(IsIFunc ? "ifunc" : "alias") + "(\"" + Name + "\")")
-                         .str());
-        }
-      }
-    }
-    return false;
-  }
+  // if (GV->isDeclaration()) {
+  //   Diags.Report(Location, diag::err_alias_to_undefined) << IsIFunc << IsIFunc;
+  //   Diags.Report(Location, diag::note_alias_requires_mangled_name)
+  //       << IsIFunc << IsIFunc;
+  //   // Provide a note if the given function is not found and exists as a
+  //   // mangled name.
+  //   for (const auto &[Decl, Name] : MangledDeclNames) {
+  //     if (const auto *ND = dyn_cast<NamedDecl>(Decl.getDecl())) {
+  //       if (ND->getName() == GV->getName()) {
+  //         Diags.Report(Location, diag::note_alias_mangled_name_alternative)
+  //             << Name
+  //             << FixItHint::CreateReplacement(
+  //                    AliasRange,
+  //                    (Twine(IsIFunc ? "ifunc" : "alias") + "(\"" + Name + "\")")
+  //                        .str());
+  //       }
+  //     }
+  //   }
+  //   return false;
+  // }
 
   if (IsIFunc) {
     // Check resolver function type.

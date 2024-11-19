@@ -126,7 +126,7 @@ VM_PROT_READ = 1
 VM_PROT_WRITE = 2
 VM_PROT_EXECUTE = 4
 
-# VM protection constants
+# type flag constants
 N_STAB = 0xE0
 N_PEXT = 0x10
 N_TYPE = 0x0E
