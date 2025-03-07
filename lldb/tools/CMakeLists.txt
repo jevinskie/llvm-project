@@ -13,6 +13,7 @@ add_lldb_tool_subdirectory(lldb-dap)
 
 if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
   add_lldb_tool_subdirectory(darwin-debug)
+  add_subdirectory(compact-unwind)
   if(NOT LLDB_USE_SYSTEM_DEBUGSERVER)
     add_lldb_tool_subdirectory(debugserver)
   endif()
