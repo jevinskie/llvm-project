@@ -48,18 +48,22 @@ void RepeatedOperatorCheck::check(const MatchFinder::MatchResult &Result) {
   static const CXXOperatorCallExpr *PreviousCall = nullptr;
   static SourceLocation PreviousLoc;
   static const CompoundStmt *CurrentCompound = nullptr;
+  diag({}, "HELLOTESTING0");
 
   // Get the current operator[] call and its compound statement
   const auto *CurrentCall =
       Result.Nodes.getNodeAs<CXXOperatorCallExpr>("operator");
-  if (!CurrentCall)
+  if (!CurrentCall) {
     return;
-  diag({}, "HELLOTESTING");
+  }
+  diag({}, "HELLOTESTING1");
 
   const auto *CurrentCompoundStmt =
       Result.Nodes.getNodeAs<CompoundStmt>("second");
-  if (!CurrentCompoundStmt)
+  if (!CurrentCompoundStmt) {
     return;
+  }
+  diag({}, "HELLOTESTING2");
 
   // Reset static variables if we've moved to a new compound statement
   if (CurrentCompound != CurrentCompoundStmt) {
