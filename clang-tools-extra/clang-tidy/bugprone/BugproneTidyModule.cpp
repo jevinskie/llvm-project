@@ -58,6 +58,8 @@
 #include "PointerArithmeticOnPolymorphicObjectCheck.h"
 #include "PosixReturnCheck.h"
 #include "RedundantBranchConditionCheck.h"
+// #include "RepeatedOperatorCheck.h"
+#include "RepeatedOperatorCheck.h"
 #include "ReservedIdentifierCheck.h"
 #include "ReturnConstRefFromParameterCheck.h"
 #include "SharedPtrArrayMismatchCheck.h"
@@ -277,6 +279,8 @@ public:
     CheckFactories.registerCheck<UseAfterMoveCheck>("bugprone-use-after-move");
     CheckFactories.registerCheck<VirtualNearMissCheck>(
         "bugprone-virtual-near-miss");
+    CheckFactories.registerCheck<RepeatedOperatorCheck>(
+        "bugprone-repeated-identical-lookup");
   }
 };
 

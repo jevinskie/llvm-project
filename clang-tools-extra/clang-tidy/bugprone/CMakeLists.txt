@@ -59,6 +59,7 @@ add_clang_library(clangTidyBugproneModule STATIC
   PointerArithmeticOnPolymorphicObjectCheck.cpp
   PosixReturnCheck.cpp
   RedundantBranchConditionCheck.cpp
+  RepeatedOperatorCheck.cpp
   ReservedIdentifierCheck.cpp
   ReturnConstRefFromParameterCheck.cpp
   SharedPtrArrayMismatchCheck.cpp
