@@ -33,74 +33,63 @@ void RepeatedOperatorCheck::registerMatchers(MatchFinder *Finder) {
   // Match operator[] calls
   auto OperatorCall = cxxOperatorCallExpr(
       hasOverloadedOperatorName("[]"),
-      hasArgument(0, expr().bind("first")), // The object (e.g., vec)
-      hasArgument(1, expr().bind("second")) // The index (e.g., i)
+      hasArgument(0, expr().bind("obj")), // The object (e.g., vec)
+      hasArgument(1, expr().bind("idx"))  // The index (e.g., i)
   );
 
   // Look for statements with two such calls
-  Finder->addMatcher(stmt(hasDescendant(OperatorCall.bind("first")),
-                          hasDescendant(OperatorCall.bind("second")))
-                         .bind("operator"),
+  Finder->addMatcher(stmt(hasDescendant(OperatorCall.bind("obj")),
+                          hasDescendant(OperatorCall.bind("idx")))
+                         .bind("opCall"),
                      this);
 }
 
 void RepeatedOperatorCheck::check(const MatchFinder::MatchResult &Result) {
-  static const CXXOperatorCallExpr *PreviousCall = nullptr;
-  static SourceLocation PreviousLoc;
-  static const CompoundStmt *CurrentCompound = nullptr;
-  diag({}, "HELLOTESTING0");
-
-  // Get the current operator[] call and its compound statement
-  const auto *CurrentCall =
-      Result.Nodes.getNodeAs<CXXOperatorCallExpr>("operator");
-  if (!CurrentCall) {
-    return;
-  }
-  diag({}, "HELLOTESTING1");
-
-  const auto *CurrentCompoundStmt =
-      Result.Nodes.getNodeAs<CompoundStmt>("second");
-  if (!CurrentCompoundStmt) {
-    return;
-  }
-  diag({}, "HELLOTESTING2");
-
-  // Reset static variables if we've moved to a new compound statement
-  if (CurrentCompound != CurrentCompoundStmt) {
-    PreviousCall = nullptr;
-    PreviousLoc = SourceLocation();
-    CurrentCompound = CurrentCompoundStmt;
-  }
-
-  // If this is the first call in the compound statement, store it and move on
-  if (!PreviousCall) {
+    static const CXXOperatorCallExpr *PreviousCall = nullptr;
+    static SourceLocation PreviousLoc;
+    static const CompoundStmt *CurrentCompound = nullptr;
+    static const Expr *PrevObj = nullptr;
+    static const Expr *PrevIndex = nullptr;
+  
+    // Get the current operator[] call and its compound statement
+    const auto *CurrentCall = Result.Nodes.getNodeAs<CXXOperatorCallExpr>("opCall");
+    if (!CurrentCall) return;
+  
+    const auto *CurrentCompoundStmt = Result.Nodes.getNodeAs<CompoundStmt>("compoundStmt");
+    if (!CurrentCompoundStmt) return;
+  
+    // Reset static variables if we've moved to a new compound statement
+    if (CurrentCompound != CurrentCompoundStmt) {
+      PreviousCall = nullptr;
+      PreviousLoc = SourceLocation();
+      CurrentCompound = CurrentCompoundStmt;
+    }
+  
+    // If this is the first call in the compound statement, store it and move on
+    if (!PreviousCall) {
+      PreviousCall = CurrentCall;
+      PreviousLoc = CurrentCall->getBeginLoc();
+      return;
+    }
+  
+    // Compare the current call with the previous one
+    const auto *CurrObj = Result.Nodes.getNodeAs<Expr>("obj");
+    const auto *CurrIndex = Result.Nodes.getNodeAs<Expr>("idx");
+  
+    std::string PrevObjSrc = getSourceText(Result, PrevObj);
+    std::string CurrObjSrc = getSourceText(Result, CurrObj);
+    std::string PrevIndexSrc = getSourceText(Result, PrevIndex);
+    std::string CurrIndexSrc = getSourceText(Result, CurrIndex);
+  
+    // Check if the calls match and are in the same file
+    if (PrevObjSrc == CurrObjSrc && PrevIndexSrc == CurrIndexSrc &&
+        Result.SourceManager->getFileID(PreviousLoc) == Result.SourceManager->getFileID(CurrentCall->getBeginLoc())) {
+      diag(CurrentCall->getBeginLoc(), "Repeated use of operator[] with the same object and index");
+    }
+  
+    // Update the previous call for the next iteration
     PreviousCall = CurrentCall;
     PreviousLoc = CurrentCall->getBeginLoc();
-    return;
-  }
-
-  // Compare the current call with the previous one
-  const auto *PrevObj = Result.Nodes.getNodeAs<Expr>("obj");
-  const auto *PrevIndex = Result.Nodes.getNodeAs<Expr>("index");
-  const auto *CurrObj = Result.Nodes.getNodeAs<Expr>("obj");
-  const auto *CurrIndex = Result.Nodes.getNodeAs<Expr>("index");
-
-  std::string PrevObjSrc = getSourceText(Result, PrevObj);
-  std::string CurrObjSrc = getSourceText(Result, CurrObj);
-  std::string PrevIndexSrc = getSourceText(Result, PrevIndex);
-  std::string CurrIndexSrc = getSourceText(Result, CurrIndex);
-
-  // Check if the calls match and are in the same file
-  if (PrevObjSrc == CurrObjSrc && PrevIndexSrc == CurrIndexSrc &&
-      Result.SourceManager->getFileID(PreviousLoc) ==
-          Result.SourceManager->getFileID(CurrentCall->getBeginLoc())) {
-    diag(CurrentCall->getBeginLoc(),
-         "Repeated use of operator[] with the same object and index");
-  }
-
-  // Update the previous call for the next iteration
-  PreviousCall = CurrentCall;
-  PreviousLoc = CurrentCall->getBeginLoc();
 }
 
 // std::string RepeatedOperatorCheck::getSourceText(const
